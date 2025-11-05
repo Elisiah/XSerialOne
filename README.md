@@ -6,14 +6,14 @@ Unlike other on-market devices that rely on fixed-function hardware, such as jus
 This enables developers to construct interchangeable software modules that modify or generate input dynamically; for example, applying deadzones, reading input from a physical controller, integrating Twitch chat commands, or producing input from camera-based detection in realtime.
 
 ## Features
-- Control Xbox Consoles enitrely with code using the XSerialOne hardware.
+- Control Xbox Consoles entirely with code using the XSerialOne hardware.
 - Chain together input generators and modifiers to create complex behaviors.
 - Custom modules can be built purely with Python code using the provided Base Classes, making customization of inputs limited only by your imagination.
 
 ## Disclaimer
 - This project was started as an educational exercise in understanding console input systems and the ways in which they can be manipulated.
 - In order to not promote cheating using such software, I will not publish any designs or information about the XSerialOne device.
-- Users are responsible for complying with the terms of service of the platforms they use, I do not hold any responsbility for misuse of this software or hardware.
+- Users are responsible for complying with the terms of service of the platforms they use, I do not hold any responsibility for misuse of this software or hardware.
 
 ## Quick Setup
 
