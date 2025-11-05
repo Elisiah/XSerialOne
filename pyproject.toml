@@ -1,0 +1,24 @@
+[project]
+name = "XSerialOne"
+version = "0.1.0"
+description = "Xbox controller interface via custom serial XInputOne device"
+authors = [{"name" = "Ellie Vallard", "email" = ""}]
+license = {"text" = "MIT"}
+requires-python = ">=3.8"
+dependencies = [
+    "pyserial",
+    "pygame",
+    "numpy",
+]
+
+[project.urls]
+Homepage = "https://github.com/Elisiah/XSerialOne"
+Repository = "https://github.com/Elisiah/XSerialOne.git"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
