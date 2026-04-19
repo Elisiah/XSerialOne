@@ -72,10 +72,12 @@ class InputPipeline:
             state = mod.update(state)
         return state
 
-    def update(self, now):
+    def update(self, now=None):
         """
         Generate a frame, apply modifiers, and send via SerialInterface if configured.
         """
+        if now is None:
+            now = time.perf_counter()
         state = self.combine_generators()
         if state is None:
             return None

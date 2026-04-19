@@ -47,8 +47,11 @@ class DeadzoneModifier(BaseModifier):
     Supports optional rescaling so input outside deadzone is smooth.
     """
 
-    def __init__(self, deadzone_left=0.2, deadzone_right=0.2):
+    def __init__(self, deadzone_left=0.2, deadzone_right=0.2, deadzone=None):
         super().__init__()
+        if deadzone is not None:
+            deadzone_left = deadzone
+            deadzone_right = deadzone
         self.deadzone_left = deadzone_left
         self.deadzone_right = deadzone_right
 
@@ -64,18 +67,10 @@ class DeadzoneModifier(BaseModifier):
 
     def update(self, state: FrameState) -> FrameState:
         axes = list(state.axes)
-
-        # Left stick (axes[0], axes[1])
-        axes[0], axes[1] = self._apply_circular_deadzone(
-            axes[0], axes[1], self.deadzone_left
-        )
-
-        # Right stick (axes[2], axes[3])
-        axes[2], axes[3] = self._apply_circular_deadzone(
-            axes[2], axes[3], self.deadzone_right
-        )
-
-        return FrameState(buttons=state.buttons, axes=tuple(axes), dpad=state.dpad)
+        deadzones = [self.deadzone_left] * 2 + [self.deadzone_right] * 2
+        new_axes = [0.0 if abs(axes[i]) < deadzones[i] else axes[i] for i in range(4)]
+        new_axes.extend(axes[4:])
+        return FrameState(buttons=state.buttons, axes=tuple(new_axes), dpad=state.dpad)
     
 
 

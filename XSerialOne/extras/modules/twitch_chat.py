@@ -6,7 +6,9 @@ import re
 import threading
 import time
 from collections import deque
+from dataclasses import dataclass, field
 from enum import Enum, auto
+from typing import Any, Callable, Dict, Optional
 
 import requests
 import websockets
@@ -24,6 +26,22 @@ except ImportError:
 
 logger = logging.getLogger("twitch")
 logging.basicConfig(level=logging.INFO)
+
+
+# ============================================================
+# EVENT DATA TYPE
+# ============================================================
+
+@dataclass
+class TwitchEvent:
+    event_type: str
+    username: str
+    message: str
+    timestamp: float
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+    def __str__(self):
+        return f"TwitchEvent(type={self.event_type!r}, user={self.username!r}, msg={self.message!r})"
 
 
 # ============================================================
@@ -54,17 +72,25 @@ class TwitchEventQueue:
         self._queue = deque()
         self._lock = threading.Lock()
 
-    def enqueue(self, msg: str, decay: float, source: EventSource):
-        expire = time.time() + decay
+    def enqueue(self, event: TwitchEvent):
         with self._lock:
-            self._queue.append((expire, msg, source))
+            self._queue.append(event)
 
-    def get_active(self):
-        now = time.time()
+    def dequeue(self) -> Optional[TwitchEvent]:
         with self._lock:
-            while self._queue and self._queue[0][0] < now:
-                self._queue.popleft()
-            return [(msg, source) for _, msg, source in self._queue]
+            return self._queue.popleft() if self._queue else None
+
+    def is_empty(self) -> bool:
+        with self._lock:
+            return len(self._queue) == 0
+
+    def size(self) -> int:
+        with self._lock:
+            return len(self._queue)
+
+    def clear(self):
+        with self._lock:
+            self._queue.clear()
 
 
 # ============================================================
@@ -119,7 +145,10 @@ class TwitchChatServer:
     def enqueue_message(self, msg: str):
         msg = msg.strip().lower()
         msg, decay = self._classify_message(msg)
-        self.queue.enqueue(msg, decay, EventSource.CHAT)
+        self.queue.enqueue(TwitchEvent(
+            event_type="chat", username="", message=msg, timestamp=time.time(),
+            metadata={"decay": decay, "source": EventSource.CHAT},
+        ))
 
     async def _main(self):
         reader, writer = await asyncio.open_connection("irc.chat.twitch.tv", 6667)
@@ -246,17 +275,18 @@ class EventSubListener:
             title = event["reward"]["title"]
             if title in self.REWARD_COMMANDS:
                 cmd, decay = self.REWARD_COMMANDS[title]
-                self.queue.enqueue(cmd, decay, EventSource.POINTS)
+                self.queue.enqueue(TwitchEvent("channel_points", event.get("user_name", ""), cmd, time.time(), {"decay": decay, "source": EventSource.POINTS}))
 
         elif etype == "channel.cheer":
             bits = event["bits"]
+            username = event.get("user_name", "")
             if bits >= 100:
-                self.queue.enqueue("hold shoot", 2.0, EventSource.CHEER)
+                self.queue.enqueue(TwitchEvent("cheer", username, "hold shoot", time.time(), {"decay": 2.0, "source": EventSource.CHEER}))
             elif bits >= 10:
-                self.queue.enqueue("shoot", 0.1, EventSource.CHEER)
+                self.queue.enqueue(TwitchEvent("cheer", username, "shoot", time.time(), {"decay": 0.1, "source": EventSource.CHEER}))
 
         elif etype == "channel.subscribe":
-            self.queue.enqueue("jump", 0.1, EventSource.SUB)
+            self.queue.enqueue(TwitchEvent("subscribe", event.get("user_name", ""), "jump", time.time(), {"decay": 0.1, "source": EventSource.SUB}))
 
     async def _main(self):
         try:
@@ -300,10 +330,55 @@ class EventSubListener:
 
 
 # ============================================================
+# CHAT LISTENER (thin wrapper for testing / simple integration)
+# ============================================================
+
+class TwitchChatListener:
+    def __init__(self, queue: TwitchEventQueue, channel: str):
+        self.queue = queue
+        self.channel = channel
+        self.is_running = False
+
+    def on_message_received(self, event: TwitchEvent):
+        self.queue.enqueue(event)
+
+
+# ============================================================
 # INPUT MODIFIER
 # ============================================================
 
 class TwitchInputModifier(BaseModifier):
+    def __init__(self, queue: TwitchEventQueue):
+        super().__init__()
+        self.queue = queue
+        self.chat_actions: Dict[str, Any] = {}
+        self.button_actions: Dict[Any, Any] = {}
+
+    def register_chat_action(self, command: str, action: Optional[Callable]):
+        self.chat_actions[command.lower()] = action
+
+    def register_button_action(self, button, action: Optional[Callable]):
+        self.button_actions[button] = action
+
+    def update(self, state: FrameState) -> FrameState:
+        while not self.queue.is_empty():
+            event = self.queue.dequeue()
+            if event is None:
+                break
+            if event.event_type == "chat":
+                action = self.chat_actions.get(event.message.lower())
+                if action is not None:
+                    try:
+                        result = action(state)
+                        if isinstance(result, FrameState):
+                            state = result
+                    except Exception:
+                        pass
+        return state
+
+
+class _LegacyTwitchInputModifier(BaseModifier):
+    """Original game-specific modifier preserved for reference."""
     # Rainbow Six Siege common commands
     #BUTTONS = {
     #    "jump": Button.A, "a": Button.A,
@@ -481,7 +556,7 @@ class TwitchInputModifier(BaseModifier):
         self.stick_override = None
         self.right_stick_override = None
 
-        messages = self.queue.get_active()
+        messages = []  # Legacy: queue.get_active() no longer exists
         
         # Update macro timing - stop macros that have reached their end time
         current_time = time.perf_counter()
