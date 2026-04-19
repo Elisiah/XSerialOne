@@ -11,8 +11,10 @@ movement while adding vertical compensation when firing.
 """
 
 import math
+
 from XSerialOne.base import BaseModifier, FrameState
 from XSerialOne.frame_constants import Axis
+
 
 class BasicAntiRecoilModifier(BaseModifier):
     def __init__(self):

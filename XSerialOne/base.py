@@ -9,10 +9,10 @@ including the immutable FrameState class for representing controller state,
 and abstract base classes for input generators and modifiers.
 """
 
+import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Tuple, List, Dict, Any
-import copy
+from typing import Any, Dict, Tuple
 
 
 @dataclass(frozen=True)
@@ -100,3 +100,27 @@ class BaseModifier(BaseModule, ABC):
     @abstractmethod
     def update(self, state: FrameState) -> FrameState:
         raise NotImplementedError
+    
+class TimeAwareMixin:
+    def __init__(self):
+        self.timers = {}
+
+    def ensure_timer(self, name):
+        if name not in self.timers:
+            self.timers[name] = {"start": None, "elapsed": 0.0}
+
+    def update_timer(self, name, now, dt):
+        self.ensure_timer(name)
+        t = self.timers[name]
+        if t["start"] is None:
+            t["start"] = now
+        t["elapsed"] += dt
+        return t["elapsed"]
+
+    def reset_timer(self, name):
+        if name in self.timers:
+            self.timers[name]["start"] = None
+            self.timers[name]["elapsed"] = 0.0
+
+    def get_pipeline_time(self):
+        return time.perf_counter()

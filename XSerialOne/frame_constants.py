@@ -7,6 +7,7 @@ Helper enums and constants for frame axis, button, and dpad direction indexing.
 
 from enum import IntEnum
 
+
 class Axis(IntEnum):
     LEFTSTICKX = 0
     LEFTSTICKY = 1

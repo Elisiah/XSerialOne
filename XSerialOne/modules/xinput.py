@@ -12,7 +12,8 @@ for reliable controller input processing.
 
 import ctypes
 import logging
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
+
 from XSerialOne.base import BaseGenerator, FrameState
 
 logger = logging.getLogger(__name__)

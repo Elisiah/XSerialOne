@@ -13,10 +13,10 @@ of controller inputs including buttons, analog sticks, and triggers.
 #TODO: Improve Visual Layout
 
 from __future__ import annotations
-import threading
+
 import queue
-import time
-from typing import Dict, Any
+import threading
+from typing import Any, Dict
 
 try:
     import pygame

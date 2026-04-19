@@ -1,8 +1,15 @@
-"""XSerialOne.modules package initializer.
+"""XSerialOne.modules package initializer."""
 
-Expose submodules under XSerialOne.modules.
-"""
+from .anti_afk import AntiAFKModifier
+from .antirecoil import BasicAntiRecoilModifier
+from .deadzones import DeadzoneModifier, HairTriggers
+from .sequence_playback import SequencePlaybackGenerator, SequenceRecordingGenerator
+from .xinput import XInputGenerator
 
-from . import xinput, twitchchat, antirecoil, deadzones
-
-__all__ = ["xinput", "twitchchat", "antirecoil", "deadzones"]
+__all__ = [
+    "XInputGenerator",
+    "BasicAntiRecoilModifier",
+    "DeadzoneModifier", "HairTriggers",
+    "SequencePlaybackGenerator", "SequenceRecordingGenerator",
+    "AntiAFKModifier",
+]

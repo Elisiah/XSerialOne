@@ -11,9 +11,12 @@ values, and d-pad positions.
 """
 
 import struct
-import serial
 from dataclasses import dataclass
+
+import serial
+
 from XSerialOne.base import FrameState
+
 
 @dataclass
 class Packet:
@@ -52,7 +55,7 @@ class SerialInterface:
         )
 
         if not self.ser:
-            raise RuntimeError("Serial port not open")
+            return  # mock / no-hardware mode: drop packet silently
 
         self.ser.write(packet.pack())
 

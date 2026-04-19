@@ -12,8 +12,11 @@ env/
 venv/
 ENV/
 .pytest_cache/
+.ruff_cache/
 .coverage
 htmlcov/
+unused/
+tests/
 .vscode/
 .idea/
 *.swp

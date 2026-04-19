@@ -11,7 +11,9 @@ architecture for real-time input processing and modification.
 """
 
 import time
+
 from XSerialOne.serial_interface import SerialInterface
+
 
 class InputPipeline:
     def __init__(self, serial_port=None, baud=115200, send_interval=0.005):
@@ -22,6 +24,7 @@ class InputPipeline:
         self.modifiers = []
         self.send_interval = send_interval
         self.last_send = 0
+        self.tick_rate = 0.001
 
         self.serial = SerialInterface(serial_port, baud) if serial_port else None
 
@@ -69,7 +72,7 @@ class InputPipeline:
             state = mod.update(state)
         return state
 
-    def update(self):
+    def update(self, now):
         """
         Generate a frame, apply modifiers, and send via SerialInterface if configured.
         """
@@ -91,7 +94,6 @@ class InputPipeline:
             except Exception:
                 pass
 
-        now = time.time()
         if self.serial and now - self.last_send >= self.send_interval:
             self.serial.send_frame(state)
             self.last_send = now
@@ -100,13 +102,30 @@ class InputPipeline:
 
     def run_loop(self):
         """
-        Continuous loop for pipeline updates
+        Continuous loop for pipeline updates with a precise, drift-compensated tick.
         """
+        target_interval = self.tick_rate
+        last_time = time.perf_counter()
+        next_tick = last_time
+
         try:
             while True:
-                self.update()
-                time.sleep(0.001)
+                now = time.perf_counter()
+                last_time = now
+
+                if now >= next_tick:
+                    self.update(now)
+                    next_tick += target_interval
+
+                    # If behind, catch up
+                    if now - next_tick > target_interval:
+                        next_tick = now + target_interval
+                else:
+                    sleep_time = max(0.0, next_tick - now)
+                    if sleep_time > 0:
+                        time.sleep(sleep_time)
         except KeyboardInterrupt:
             if self.serial:
                 self.serial.close()
             print("Pipeline stopped")
+

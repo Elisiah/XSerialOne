@@ -13,6 +13,7 @@ controller input on an Xbox Series X/S console.
 from XSerialOne.debug_viewer import DebugViewer
 from XSerialOne.modules.xinput import XInputGenerator
 from XSerialOne.modules.antirecoil import BasicAntiRecoilModifier
+from XSerialOne.modules.anti_afk import AntiAFKModifier
 from XSerialOne.modules.deadzones import DeadzoneModifier, HairTriggers
 from XSerialOne.pipeline import InputPipeline
 import serial.tools.list_ports
@@ -21,6 +22,8 @@ if __name__ == "__main__":
     xinput_gen = XInputGenerator()
     antirecoil_mod = BasicAntiRecoilModifier()
     deadzones_mod = DeadzoneModifier(deadzone_left=0.20, deadzone_right=0.15)
+    antiadfkmod = AntiAFKModifier()
+    #macro_mod = MacroModifier()
 
     ports = [p.device for p in serial.tools.list_ports.comports()]
     if not ports:
@@ -40,6 +43,8 @@ if __name__ == "__main__":
     pipeline.add_generator(xinput_gen)
     #pipeline.add_modifier(antirecoil_mod)
     pipeline.add_modifier(deadzones_mod)
+    #pipeline.add_modifier(macro_mod)
+    #pipeline.add_modifier(antiadfkmod)
     #pipeline.add_modifier(HairTriggers(threshold=-0.9))
 
     print("Starting controller passthrough. Press Ctrl+C to stop.")

@@ -60,3 +60,68 @@ def mock_serial():
     
     serial = MockSerial()
     return serial
+
+@pytest.fixture
+def twitch_event_queue():
+    """Fixture providing a TwitchEventQueue."""
+    from XSerialOne.extras.modules.twitch_chat import TwitchEventQueue
+    return TwitchEventQueue()
+
+@pytest.fixture
+def twitch_input_modifier(twitch_event_queue):
+    """Fixture providing a TwitchInputModifier."""
+    from XSerialOne.extras.modules.twitch_chat import TwitchInputModifier
+    return TwitchInputModifier(twitch_event_queue)
+
+@pytest.fixture
+def sample_sequence():
+    """Fixture providing a simple test sequence."""
+    from XSerialOne.sequence import Sequence, SequenceFrame
+    
+    frames = []
+    for i in range(5):
+        frame = SequenceFrame(
+            timestamp_ms=i * 100.0,
+            frame={
+                'buttons': [False]*10,
+                'axes': [0.5]*6,
+                'dpad': (0, 0)
+            }
+        )
+        frames.append(frame)
+    
+    return Sequence(name="test_sequence", frames=frames)
+
+@pytest.fixture
+def input_pipeline():
+    """Fixture providing an empty input pipeline."""
+    from XSerialOne.pipeline import InputPipeline
+    return InputPipeline()
+
+@pytest.fixture
+def all_button_states():
+    """Fixture providing FrameState with each button pressed."""
+    from XSerialOne.frame_constants import Button
+    states = []
+    for btn_idx in range(10):
+        buttons = tuple([i == btn_idx for i in range(10)])
+        state = FrameState(
+            buttons=buttons,
+            axes=tuple([0.0]*6),
+            dpad=(0, 0)
+        )
+        states.append(state)
+    return states
+
+@pytest.fixture
+def analog_stick_range():
+    """Fixture providing FrameState with various analog values."""
+    states = [
+        FrameState(
+            buttons=tuple([False]*10),
+            axes=(val/10.0, val/10.0, 0.0, 0.0, 0.0, 0.0),
+            dpad=(0, 0)
+        )
+        for val in range(11)
+    ]
+    return states
